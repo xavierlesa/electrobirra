@@ -2,9 +2,11 @@
 #define Menu_h
 
 #include "Arduino.h"
+#include <LiquidCrystal.h>
 #include <EEPROM.h> 
 #include <EEPROMAnything.h>
-#include <LiquidCrystal.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include "Buttons.h"
 
 // Menu principal
@@ -36,42 +38,28 @@
 // Fermentation
 // implementar!
 
+// HEXA MEMORY ADDRESS
+// desde 0x000 hasta 0x200
+#define ADDR_SENSOR_HTL                     0x00 // Direccion HEX para el sensor HLT
+#define ADDR_SENSOR_MT                      0x08 // Direccion HEX para el sensor MT
+#define ADDR_SENSOR_FC                      0x10 // Direccion HEX para el sensor FC
 
 // Reserva de bytes para programa de coccion
-#define ADDR_BREW_MASH_STEP0_TEMP           16 // Indica el tiempo del 1er escalon de macerado
-#define ADDR_BREW_MASH_STEP1_TEMP           20 // 2do
-#define ADDR_BREW_MASH_STEP2_TEMP           24 // 3er
-#define ADDR_BREW_MASH_STEP3_TEMP           28 // 4to
-#define ADDR_BREW_MASH_STEP4_TEMP           32 // 5to
+#define ADDR_BREW_MASH_STEP0_TEMP           0x18 // Indica el tiempo del 1er escalon de macerado
+#define ADDR_BREW_MASH_STEP1_TEMP           0x1E // 2do
+#define ADDR_BREW_MASH_STEP2_TEMP           0x24 // 3er
+#define ADDR_BREW_MASH_STEP3_TEMP           0x2A // 4to
+#define ADDR_BREW_MASH_STEP4_TEMP           0x30 // 5to
 
-#define ADDR_BREW_MASH_STEP0_TIME           36 // Indica el tiempo del 1er escalon de macerado
-#define ADDR_BREW_MASH_STEP1_TIME           40 // 2do
-#define ADDR_BREW_MASH_STEP2_TIME           44 // 3er
-#define ADDR_BREW_MASH_STEP3_TIME           48 // 4to
-#define ADDR_BREW_MASH_STEP4_TIME           52 // 5to
-
-#define ADDR_BREW_RECIRCULATION_CONT        54 // Booleano, indica si es recirculado continuo, si es entonces al momento del macerado comienza a recircular
-#define ADDR_BREW_RECIRCULATION_TIME        56 // Tiempo total de recirculado, incluso si es continuo
-
-#define ADDR_BREW_SPARGING_TEMP             60 // Temperatura del agua de lavado
-#define ADDR_BREW_SPARGING_TIME             64 // Tiempo total del lavado
-
-#define ADDR_BREW_BOIL_TIME                 68 // Indica cuanto tiempo ha de hervir (desde el inicio de hervor)
-#define ADDR_BREW_BOIL_HOPS0_TIME           72 // Indica el tiempo de la 1er adesion de lupulo (desde el inicio de hervor)
-#define ADDR_BREW_BOIL_HOPS1_TIME           76 // 2da
-#define ADDR_BREW_BOIL_HOPS2_TIME           80 // 3ra
-#define ADDR_BREW_BOIL_HOPS3_TIME           84 // 4ta
-#define ADDR_BREW_BOIL_HOPS4_TIME           88 // 5ta
-
-#define ADDR_BREW_WHIRLPOOL_TIME            92 // Tiempo de whirpool, 5, 10, 15 min.
-#define ADDR_BREW_WHIRLPOOL_DELAY           96 // Tiempo de epsera para completar el whirpool, 5, 10, 15 min.
-
-#define ADDR_BREW_COOLING_TIME              100 // Tiempo encendida de la bomba de enfriado
-
-// Offset y correciones y otros
-#define ADDR_BREW_MASH_TEMP_OFFSET          104 // Offset para corregir la perdida de temperatura al momento de macerar +5º
-#define ADDR_BREW_SPARGING_TEMP_OFFSET      108 // Offset para corregir la perdida de temperatura al momento de lavar +1º
-
+#define ADDR_BREW_MASH_STEP0_TIME           0x36 // Indica el tiempo del 1er escalon de macerado
+#define ADDR_BREW_MASH_STEP1_TIME           0x38 // 2do
+#define ADDR_BREW_MASH_STEP2_TIME           0x3A // 3er
+#define ADDR_BREW_MASH_STEP3_TIME           0x3C // 4to
+#define ADDR_BREW_MASH_STEP4_TIME           0x3E // 5to
+                                            
+#define ADDR_BREW_RECIRCULATION_CONT        0x40 // Booleano, indica si es recirculado continuo, si es entonces al momento del macerado comienza a recircular
+#define ADDR_BREW_RECIRCULATION_TIME        0x41 // Tiempo total de recirculado, incluso si es continuo
+//0x43
 
 class Menu
 {
@@ -79,17 +67,37 @@ class Menu
         int _lcd_columns;
         int _lcd_rows;
         bool _blink;
+        OneWire oneWire;                    // SENSOR_ONEWIRE_PIN
+        DallasTemperature sensorsBus;       // &oneWire
     
+        DeviceAddress addrSensorHlt;
+        DeviceAddress addrSensorMt;
+        DeviceAddress addrSensorFc;
+            
+        int _rele_r1_pwm_pin;
+        int _rele_r2_pwm_pin;
+        int _rele_ht_pwm_pin;
+        int _rele_lt_pwm_pin;
+        int _rele_pump_pwm_pin;
+
+        float __temp;
+        int __time;
+        bool __bool;
+
     public:
 
         int arrowUp;
         int arrowDown;
+        int arrowLeft;
+        int arrowRight;
         int cursorDot;
         int cursorSpace;
         int pointer_cursor;
 
         uint8_t arrowUpByte[7];
         uint8_t arrowDownByte[8];
+        uint8_t arrowLeftByte[8];
+        uint8_t arrowRightByte[8];
         uint8_t cursorDotByte[8];
         uint8_t cursorSpaceByte[8];
 
@@ -140,7 +148,13 @@ class Menu
                 int LCD_D7,
                 int LCD_COLUMNS, 
                 int LCD_ROWS, 
-                int LCD_BACKLIGHT
+                int LCD_BACKLIGHT,
+                int SENSOR_ONEWIRE_PIN,
+                int rele_r1_pwm_pin,
+                int rele_r2_pwm_pin,
+                int rele_ht_pwm_pin,
+                int rele_lt_pwm_pin,
+                int rele_pump_pwm_pin
                 );
 
         Buttons buttons;
@@ -149,11 +163,18 @@ class Menu
         void stageSelector(int stage, int subpointer = 1, bool asc = true);
         void stepSetInt(int _default, int _step, int *buffer, int cur_x, int cur_y);
         void stepSetFloat(float _default, float _step, float *buffer, int cur_x, int cur_y);
+        void stepSetBool(bool _default, bool *buffer, int cur_x, int cur_y);
+        void cursorFloat(float _f, int cur_x, int cur_y);
+        void cursorInt(int _i, int cur_x, int cur_y);
+        void cursorBool(bool _i, int cur_x, int cur_y);
+
+        void _showSave();
+        void _showSaved();
 
         void menuNext();
         void menuPrev();
 
-        //void showMenu();
+        void showMenu();
 
         void home();
         void monitor(float htl, float mt, float fc, int _flags);
@@ -165,5 +186,12 @@ class Menu
         void brewBoil();
         void brewWhirlpool();
         void brewCooling();
+
+        void configure_brewMashStep0();
+        void configure_brewMashStep1();
+        void configure_brewMashStep2();
+        void configure_brewMashStep3();
+        void configure_brewMashStep4();
+
 };
 #endif

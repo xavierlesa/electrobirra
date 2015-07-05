@@ -2,7 +2,8 @@
 #include <LiquidCrystal.h>
 #include <Menu.h>
 #include <Buttons.h>
-#include <Core.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 void setup();
 void loop();
 #line 1 "src/sketch.ino"
@@ -68,6 +69,9 @@ void loop();
 //#include <LiquidCrystal.h>
 //#include <Menu.h>
 //#include <Buttons.h>
+
+//#include <OneWire.h>
+//#include <DallasTemperature.h>
 //#include <Core.h>
 
 // PIN MAPPING
@@ -138,11 +142,7 @@ Menu menu(
         LCD_D7, 
         LCD_COLUMNS, 
         LCD_ROWS, 
-        LCD_BACKLIGHT
-        );
-
-Core core(
-        &menu,
+        LCD_BACKLIGHT,
         SENSOR_ONEWIRE_PIN,
         RELE_R1_PWM_PIN,
         RELE_R2_PWM_PIN,
@@ -160,10 +160,16 @@ void setup()
 
     digitalWrite(RELE_R1_PWM_PIN, HIGH);
     digitalWrite(RELE_PUMP_PWM_PIN, HIGH);
+
+    menu.lcd.clear();
+    menu.lcd.print("  ElectroBirra");
+    menu.lcd.setCursor(0, 1);
+    menu.lcd.print("  v0.2 201507");
+
+    delay(2500);
 }
 
 void loop()
-{
-    core.main();
-
+{ 
+    menu.showMenu();
 }

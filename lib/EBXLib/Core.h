@@ -2,8 +2,8 @@
 #define Core_h
 
 #include "Arduino.h"
-#include <EEPROM.h> 
-#include "EEPROMAnything.h"
+//#include <EEPROM.h> 
+//#include "EEPROMAnything.h"
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <Menu.h>
@@ -18,9 +18,9 @@
 #define ADDR_FERMENTATION_TEMP_LOW_OFFSET   12 // Offset de temp mínima
 
 // Direcciones de 16 bytes
-#define ADDR_SENSOR_HTL                     0 // Direccion HEX para el sensor HLT
-#define ADDR_SENSOR_MT                      8 // Direccion HEX para el sensor MT
-#define ADDR_SENSOR_FC                      16 // Direccion HEX para el sensor FC
+#define ADDR_SENSOR_HTL                     0x88 // Direccion HEX para el sensor HLT
+#define ADDR_SENSOR_MT                      0x90 // Direccion HEX para el sensor MT
+#define ADDR_SENSOR_FC                      0x98 // Direccion HEX para el sensor FC
 // 160
 
 class Core
@@ -34,7 +34,7 @@ class Core
         float fermentationTempHighOffset;   // 0.50 C
         float fermentationTempLowOffset;    // 0.50 C 
 
-        DeviceAddress addrSensorHtl;
+        DeviceAddress addrSensorHlt;
         DeviceAddress addrSensorMt;
         DeviceAddress addrSensorFc;
         DeviceAddress addrSensorTest;//  = { 0x28, 0xFF, 0xBA, 0x51, 0x4B, 0x04, 0x00, 0x26 };
@@ -44,6 +44,8 @@ class Core
         int RELE_HT_PWM_PIN;
         int RELE_LT_PWM_PIN;
         int RELE_PUMP_PWM_PIN;
+
+        bool array_cmp(uint8_t *a, uint8_t *b, int len_a, int len_b);
 
     public:
         Core(
@@ -57,10 +59,10 @@ class Core
                 );
 
         Menu* _menu;
-        float getTemperature(DeviceAddress device);
         void main();
+        float getTemperature(DeviceAddress device);
         void discoverSensors();
-        //String _sensorsPrintAddress(DeviceAddress deviceAddress);
+        String _sensorsPrintAddress(DeviceAddress deviceAddress);
 
 };
 
