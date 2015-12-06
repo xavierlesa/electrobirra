@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * ElectroBirra v 0.2
  *
@@ -43,3 +44,7 @@
  *
  *
  */
+=======
+# electrobirra
+Proyecto con base arduino para hacer y controlar el proceso de la birra y el fermentador.
+>>>>>>> 0ee19ccf897a838620492b58efc75f134f74f25a
