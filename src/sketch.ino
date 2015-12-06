@@ -58,11 +58,10 @@
  */
 
 #include <LiquidCrystal.h>
-#include <Menu.h>
-#include <Buttons.h>
-
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <Buttons.h>
+#include <Menu.h>
 //#include <Core.h>
 
 // PIN MAPPING
@@ -78,10 +77,10 @@
 // 
 // DIGITAL
 // 
-// 0:   NC (RELE_LT_PWM_PIN)
-// 1:   NC (RELE_R2_PWM_PIN)
-// 2:   NC (RELE_HT_PWM_PIN)
-// 3~:  NC (RELE_R1_PWM_PIN)
+// 0:   NC
+// 1:   NC
+// 2:   NC
+// 3~:  NC (RELE_PUMP_B_PWM_PIN RELE_LT_PWM_PIN)
 // 4:   LCD_D4
 // 5~:  LCD_D5
 // 6~:  LCD_D6
@@ -89,8 +88,8 @@
 // 8:   LCD_RS
 // 9~:  LCD_ENABLE
 // 10~: LCD_BACKLIGHT
-// 11~: RELE_PUMP_PWM_PIN
-// 12:  NC
+// 11~: RELE_PUMP_A_PWM_PIN RELE_HT_PWM_PIN 
+// 12:  RELE_R1_PWM_PIN RELE_R2_PWM_PIN
 // 13:  SENSOR_ONEWIRE_PIN
 //
 // Pines A0 y 4 a 9 reservados
@@ -117,11 +116,15 @@
 // Reles para resistencias x 2
 #define RELE_R1_PWM_PIN     12 // rele para r1
 #define RELE_R2_PWM_PIN     12 // rele para r2
-#define RELE_HT_PWM_PIN     12 // rele para fermentador temp >= H
-#define RELE_LT_PWM_PIN     12 // rele para fermentador temp <= L
 
-// Rele para bomba
-#define RELE_PUMP_PWM_PIN   11 // rele para bomba recirculado, trasvase y enfriado
+#define RELE_HT_PWM_PIN     11 // rele para fermentador temp >= H
+#define RELE_LT_PWM_PIN      3 // rele para fermentador temp <= L
+
+// Rele para bomba A y B
+#define RELE_PUMP_A_PWM_PIN   11 // rele para bomba recirculado, trasvase y enfriado
+#define RELE_PUMP_B_PWM_PIN    3 // rele para bomba recirculado, trasvase y enfriado
+
+#define RELE_NA               true // el rele es normal abierto o cerrado?
 
 Menu menu(
         BUTTONS_PIN, 
@@ -139,25 +142,36 @@ Menu menu(
         RELE_R2_PWM_PIN,
         RELE_HT_PWM_PIN,
         RELE_LT_PWM_PIN,
-        RELE_PUMP_PWM_PIN
+        RELE_PUMP_A_PWM_PIN,
+        RELE_PUMP_B_PWM_PIN,
+        RELE_NA
         );
 
 void setup()
 {
     // init Serial 
     Serial.begin(9600);
-    pinMode(RELE_R1_PWM_PIN, OUTPUT);
-    pinMode(RELE_PUMP_PWM_PIN, OUTPUT);
+    Serial.println("//////////////////////////////////////// Inicio setup");
 
-    digitalWrite(RELE_R1_PWM_PIN, HIGH);
-    digitalWrite(RELE_PUMP_PWM_PIN, HIGH);
+    pinMode(RELE_R1_PWM_PIN, OUTPUT);
+    pinMode(RELE_R2_PWM_PIN, OUTPUT);
+    pinMode(RELE_PUMP_A_PWM_PIN, OUTPUT);
+    pinMode(RELE_PUMP_B_PWM_PIN, OUTPUT);
+
+    digitalWrite(RELE_R1_PWM_PIN, RELE_NA ^ LOW);
+    digitalWrite(RELE_R2_PWM_PIN, RELE_NA ^ LOW);
+    digitalWrite(RELE_PUMP_A_PWM_PIN, RELE_NA ^ LOW);
+    digitalWrite(RELE_PUMP_B_PWM_PIN, RELE_NA ^ LOW);
 
     menu.lcd.clear();
     menu.lcd.print("  ElectroBirra");
     menu.lcd.setCursor(0, 1);
-    menu.lcd.print("  v0.2 201507");
+    menu.lcd.print("  v0.2r201508");
 
+    Serial.println("Cargando los datos de configuracion desde la EEPROM");
+    menu.loadData();
     delay(2500);
+    Serial.println("//////////////////////////////////////// Fin setup");
 }
 
 void loop()
