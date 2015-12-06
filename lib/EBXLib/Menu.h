@@ -131,6 +131,8 @@ class Menu
         uint8_t arrowRight;
         uint8_t cursorDot;
         uint8_t cursorSpace;
+        uint8_t hotElement;
+        uint8_t pumpOn;
         uint8_t pointer_cursor;
 
         uint8_t arrowUpByte[7];
@@ -139,6 +141,8 @@ class Menu
         uint8_t arrowRightByte[8];
         uint8_t cursorDotByte[8];
         uint8_t cursorSpaceByte[8];
+        uint8_t hotElementByte[8];
+        uint8_t pumpOnByte[8];
 
         float brewMashStep0Temp;            // 67 C
         float brewMashStep1Temp;            // 67 C
@@ -205,7 +209,7 @@ class Menu
         void stepSetInt(uint8_t _default, uint8_t _step, uint8_t *buffer, uint8_t cur_x, uint8_t cur_y);
         void stepSetFloat(float _default, float _step, float *buffer, uint8_t cur_x, uint8_t cur_y);
         void stepSetBool(bool _default, bool *buffer, uint8_t cur_x, uint8_t cur_y);
-        void cursorFloat(float _f, uint8_t cur_x, uint8_t cur_y);
+        void cursorFloat(float _o, float _f, uint8_t cur_x, uint8_t cur_y);
         void cursorInt(uint8_t _i, uint8_t cur_x, uint8_t cur_y);
         void cursorBool(bool _i, uint8_t cur_x, uint8_t cur_y);
 
@@ -219,6 +223,7 @@ class Menu
         void showMenu();
         void home();
         void monitor(float htl, float mt, float fc, uint8_t _flags);
+        void statusHotPump();
         uint8_t manual(uint8_t upPin, uint8_t downPin); //, uint8_t enterPin, uint8_t backPin);
         void brewMenu(uint8_t pointer = 0);
         void _showBrewMenu(uint8_t pointer = 0);

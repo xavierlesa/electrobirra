@@ -12,6 +12,7 @@
 #include <MemoryFree.h>
 #include <pgmStrToRAM.h>
 
+// Instance MENU
 Menu::Menu(
         uint8_t BUTTONS_PIN, 
         uint8_t LCD_RS,
@@ -37,9 +38,6 @@ Menu::Menu(
     oneWire(SENSOR_ONEWIRE_PIN),
     sensorsBus(&oneWire)
 {
-    // backlight
-    _lcd_columns = LCD_COLUMNS;
-    _lcd_rows = LCD_ROWS;
 
     // PINes
     _rele_r1_pwm_pin = RELE_R1_PWM_PIN;
@@ -49,6 +47,10 @@ Menu::Menu(
     _rele_pump_a_pwm_pin = RELE_PUMP_A_PWM_PIN;
     _rele_pump_b_pwm_pin = RELE_PUMP_B_PWM_PIN;
     _RELE_NA = RELE_NA;
+
+    // backlight
+    _lcd_columns = LCD_COLUMNS;
+    _lcd_rows = LCD_ROWS;
 
     // LCD chars
     arrowUp = 0;
@@ -104,10 +106,26 @@ Menu::Menu(
     cursorSpaceByte[4] = B11111; 
     cursorSpaceByte[5] = B00000; 
     cursorSpaceByte[6] = B00000;
-    
-    pointer_cursor = 0;
 
-    // config LCD
+    hotElement = 6;
+    hotElementByte[0] = B11111;
+    hotElementByte[1] = B10101;
+    hotElementByte[2] = B10101; 
+    hotElementByte[3] = B10001; 
+    hotElementByte[4] = B10101; 
+    hotElementByte[5] = B10101; 
+    hotElementByte[6] = B11111;
+
+    pumpOn = 7;
+    pumpOnByte[0] = B11111;
+    pumpOnByte[1] = B10001;
+    pumpOnByte[2] = B10101;
+    pumpOnByte[3] = B10001;
+    pumpOnByte[4] = B10111;
+    pumpOnByte[5] = B10111;
+    pumpOnByte[6] = B11111;
+    
+    // config & init LCD, init sensors
     pinMode(LCD_BACKLIGHT, OUTPUT);
     digitalWrite(LCD_BACKLIGHT, HIGH);
 
@@ -117,6 +135,8 @@ Menu::Menu(
     lcd.createChar(arrowRight, arrowRightByte);
     lcd.createChar(cursorDot, cursorDotByte);
     lcd.createChar(cursorSpace, cursorSpaceByte);
+    lcd.createChar(hotElement, hotElementByte);
+    lcd.createChar(pumpOn, pumpOnByte);
 
     // init LCD
     lcd.begin(LCD_COLUMNS, LCD_ROWS);
@@ -161,15 +181,16 @@ Menu::Menu(
     menuItemsBrew[BREW_STAGE_OPTIONS_OFFSET][3] = "Offset Lavado";
     //menuItemsBrew[BREW_STAGE_OPTIONS_OFFSET][3] = "Offset Mash-out";
 
+    // Variables
     _HOT_ELEMENTS_STATUS = false;
     _PUMPS_STATUS = false;
     _SPARGING_WATER_IN_PROGRESS = false;
+    pointer_cursor = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // MENU HELPERS
 ///////////////////////////////////////////////////////////////////////////////
-
 void Menu::stageSelector(uint8_t stage, uint8_t subpointer, bool asc)
 {
     /*
@@ -244,37 +265,57 @@ void Menu::_showSaved()
     delay(1000);
 }
 
-void Menu::cursorFloat(float _f, uint8_t cur_x, uint8_t cur_y)
+void Menu::cursorFloat(float _o, float _f, uint8_t cur_x, uint8_t cur_y)
 {
+    /*
+     * Muestra la temperatura objetivo y la temperatura actual
+     * en la posiciones x, y
+     */
 
     char _buffer[5];
-    dtostrf(_f, 3, 1, _buffer);
-    lcd.setCursor(cur_x, cur_y);
-    if(_f < 10)
-    { 
+    if(_blink)
+    {
+        dtostrf(_f, 3, 1, _buffer);
         lcd.setCursor(cur_x, cur_y);
-        if(_blink)
-        {
+        if(_f < 10)
+        { 
+            lcd.setCursor(cur_x, cur_y);
             lcd.print(F("__")); 
             lcd.print(_buffer);
         }
-        else lcd.print(F("___._"));
-    }
-    if(_f >= 10 && _f < 100)
-    {
-        lcd.setCursor(cur_x, cur_y);
-        if(_blink)
+        if(_f >= 10 && _f < 100)
         {
+            lcd.setCursor(cur_x, cur_y);
             lcd.print(F("_"));
             lcd.print(_buffer);
         }
-        else lcd.print(F("___._"));
+        if(_f >= 100)
+        {
+            lcd.setCursor(cur_x, cur_y);
+            lcd.print(_buffer);
+        }
     }
-    if(_f >= 100)
+    else 
     {
+        dtostrf(_o, 3, 1, _buffer);
         lcd.setCursor(cur_x, cur_y);
-        if(_blink) lcd.print(_buffer);
-        else lcd.print(F("___._"));
+        if(_o < 10)
+        { 
+            lcd.setCursor(cur_x, cur_y);
+            lcd.print(F("__")); 
+            lcd.print(_buffer);
+        }
+        if(_o >= 10 && _o < 100)
+        {
+            lcd.setCursor(cur_x, cur_y);
+            lcd.print(F("_"));
+            lcd.print(_buffer);
+        }
+        if(_o >= 100)
+        {
+            lcd.setCursor(cur_x, cur_y);
+            lcd.print(_buffer);
+        }
     }
     _blink = !_blink;
 }
@@ -291,7 +332,7 @@ void Menu::stepSetFloat(float _default, float _step, float *buffer, uint8_t cur_
     {
         if(buttons.isUp()) _default += _step;
         if(buttons.isDown() && _default >= _step) _default -= _step;
-        Menu::cursorFloat(_default, cur_x, cur_y);
+        Menu::cursorFloat(_default, _default, cur_x, cur_y);
     }
 
     *buffer = _default;
@@ -526,6 +567,22 @@ uint8_t Menu::manual(uint8_t upPin, uint8_t downPin) //, uint8_t enterPin, uint8
     return r;
 }
 
+void Menu::statusHotPump()
+{
+    /*
+     * Muestra el estado de la bomba y resistencia en todo momento al lado derecho
+     * del LCD
+     */
+
+    lcd.setCursor(15,0);
+    if(!_RELE_NA ^ !digitalRead(_rele_r1_pwm_pin)) lcd.write(hotElement); //lcd.print(F("H"));
+    else lcd.print(F("H"));
+
+    lcd.setCursor(15,1);
+    if(!_RELE_NA ^ !digitalRead(_rele_pump_a_pwm_pin)) lcd.write(pumpOn); //lcd.print(F("P"));
+    else lcd.print(F("P"));
+}
+
 void Menu::monitor(float hlt, float mt, float fc, uint8_t _flags)
 {
     /*
@@ -548,11 +605,11 @@ void Menu::monitor(float hlt, float mt, float fc, uint8_t _flags)
     dtostrf(mt, 3, 1, mt_buffer);
     dtostrf(fc, 3, 1, fc_buffer);
 
-    lcd.clear();
+    //lcd.clear();
     lcd.print(F("HTL  MT   FC"));
     lcd.setCursor(15,0);
-    if(_flags & B1000) lcd.print(F("H"));
-    else lcd.print(F("h"));
+    if(_flags & B1000) lcd.write(hotElement); //lcd.print(F("H"));
+    else lcd.print(F("H"));
 
     lcd.setCursor(0,1);
     lcd.print(hlt_buffer);
@@ -561,10 +618,9 @@ void Menu::monitor(float hlt, float mt, float fc, uint8_t _flags)
     lcd.setCursor(10,1);
     lcd.print(fc_buffer);
     lcd.setCursor(15,1);
-    if(_flags & B0100) lcd.print(F("P"));
-    else lcd.print(F("p"));
+    if(_flags & B0100) lcd.write(pumpOn); //lcd.print(F("P"));
+    else lcd.print(F("P"));
 }
-
 
 void Menu::_showBrewMenu(uint8_t pointer)
 {
@@ -574,6 +630,10 @@ void Menu::_showBrewMenu(uint8_t pointer)
     lcd.print(menuItemsBrew[pointer][SUBSTAGE_INDEX]);
     lcd.setCursor(0, 1);
     lcd.print(menuItemsBrew[pointer+1][SUBSTAGE_INDEX]); 
+
+    // espera para evitar triggear
+    delay(150);
+
     // serial monitor
     //DEBUG_PRINT(freeMemory());
 }
@@ -587,7 +647,7 @@ void Menu::brewMenu(uint8_t pointer)
 
     //DEBUG_PRINT(freeMemory());
     Menu::_showBrewMenu(pointer);
-    delay(250);
+    //delay(200);
 
     while(!buttons.isSelect())
     {
@@ -730,7 +790,7 @@ void Menu::brewMash(uint8_t pointer)
                     //DEBUG_PRINT(brewMashStep0Time);
                     //DEBUG_PRINT(F("sale de: cursorFloat(brewMashStep0Temp, 0, 1)"));
 
-                    cursorFloat(brewMashStep0Temp, 0, 1);
+                    cursorFloat(brewMashStep0Temp, brewMashStep0Temp, 0, 1);
                     _blink = true;
                     cursorInt(brewMashStep0Time, 9, 1);
                     // configura los valores
@@ -740,7 +800,7 @@ void Menu::brewMash(uint8_t pointer)
 
                 case 2:
                     // muestra los valores prefijatos/seteados
-                    cursorFloat(brewMashStep1Temp, 0, 1);
+                    cursorFloat(brewMashStep1Temp, brewMashStep1Temp, 0, 1);
                     _blink = true;
                     cursorInt(brewMashStep1Time, 9, 1);
                     // configura los valores
@@ -750,7 +810,7 @@ void Menu::brewMash(uint8_t pointer)
 
                 case 3:
                     // muestra los valores prefijatos/seteados
-                    cursorFloat(brewMashStep2Temp, 0, 1);
+                    cursorFloat(brewMashStep2Temp, brewMashStep2Temp, 0, 1);
                     _blink = true;
                     cursorInt(brewMashStep2Time, 9, 1);
                     // configura los valores
@@ -760,7 +820,7 @@ void Menu::brewMash(uint8_t pointer)
 
                 case 4:
                     // muestra los valores prefijatos/seteados
-                    cursorFloat(brewMashStep3Temp, 0, 1);
+                    cursorFloat(brewMashStep3Temp, brewMashStep3Temp, 0, 1);
                     _blink = true;
                     cursorInt(brewMashStep3Time, 9, 1);
                     // configura los valores
@@ -770,7 +830,7 @@ void Menu::brewMash(uint8_t pointer)
 
                 case 5:
                     // muestra los valores prefijatos/seteados
-                    cursorFloat(brewMashStep4Temp, 0, 1);
+                    cursorFloat(brewMashStep4Temp, brewMashStep4Temp, 0, 1);
                     _blink = true;
                     cursorInt(brewMashStep4Time, 9, 1);
                     // configura los valores
@@ -790,7 +850,7 @@ void Menu::configure_brewMashStep0()
     stepSetFloat(brewMashStep0Temp, 0.5, _temp, 0, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
-    cursorFloat(*_temp, 0, 1);
+    cursorFloat(*_temp, *_temp, 0, 1);
     //DEBUG_PRINT(F("Setting save stepSetFloat: "));
     //DEBUG_PRINT(*_temp);
     delay(500);
@@ -828,7 +888,7 @@ void Menu::configure_brewMashStep1()
     stepSetFloat(brewMashStep1Temp, 0.5, _temp, 0, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
-    cursorFloat(*_temp, 0, 1);
+    cursorFloat(*_temp, *_temp, 0, 1);
     delay(500);
 
     uint8_t __time = 0;
@@ -860,7 +920,7 @@ void Menu::configure_brewMashStep2()
     stepSetFloat(brewMashStep2Temp, 0.5, _temp, 0, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
-    cursorFloat(*_temp, 0, 1);
+    cursorFloat(*_temp, *_temp, 0, 1);
     delay(500);
 
     uint8_t __time = 0;
@@ -892,7 +952,7 @@ void Menu::configure_brewMashStep3()
     stepSetFloat(brewMashStep3Temp, 0.5, _temp, 0, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
-    cursorFloat(*_temp, 0, 1);
+    cursorFloat(*_temp, *_temp, 0, 1);
     delay(500);
 
     uint8_t __time = 0;
@@ -924,7 +984,7 @@ void Menu::configure_brewMashStep4()
     stepSetFloat(brewMashStep4Temp, 0.5, _temp, 0, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
-    cursorFloat(*_temp, 0, 1);
+    cursorFloat(*_temp, *_temp, 0, 1);
     delay(500);
 
     uint8_t __time = 0;
@@ -967,7 +1027,7 @@ void Menu::brewRecirculation()
     _blink = true;
     // muestra los valores prefijatos/seteados
     cursorInt(brewRecirculationTime, 9, 1);
-
+    
     //DEBUG_PRINT(F("brewRecirculationTime ")); 
     //DEBUG_PRINT(brewRecirculationTime);
 
@@ -1021,7 +1081,7 @@ void Menu::brewSparging()
     lcd.setCursor(0, 1);
     lcd.print(F("___._C / ___ min"));
     
-    cursorFloat(brewSpargingTemp, 0, 1);
+    cursorFloat(brewSpargingTemp, brewSpargingTemp, 0, 1);
     _blink = true;
     // muestra los valores prefijatos/seteados
     cursorInt(brewSpargingTime, 9, 1);
@@ -1036,7 +1096,7 @@ void Menu::brewSparging()
     stepSetFloat(brewSpargingTemp, 0.5, _temp, 0, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
-    cursorFloat(*_temp, 0, 1);
+    cursorFloat(*_temp, *_temp, 0, 1);
     delay(500);
 
     uint8_t __time = 0;
@@ -1433,7 +1493,7 @@ void Menu::brewOptionsOffset()
             {
                 case 0:
                     // muestra los valores prefijatos/seteados
-                    cursorFloat(brewMashTempOffset, 10, 1);
+                    cursorFloat(brewMashTempOffset, brewMashTempOffset, 10, 1);
                     _blink = true;
                     // configura los valores
                     Menu::configure_brewMashTempOffset();
@@ -1442,7 +1502,7 @@ void Menu::brewOptionsOffset()
 
                 case 1:
                     // muestra los valores prefijatos/seteados
-                    cursorFloat(brewMashInTempOffset, 10, 1);
+                    cursorFloat(brewMashInTempOffset, brewMashInTempOffset, 10, 1);
                     _blink = true;
                     // configura los valores
                     Menu::configure_brewMashInTempOffset();
@@ -1451,7 +1511,7 @@ void Menu::brewOptionsOffset()
 
                 case 2:
                     // muestra los valores prefijatos/seteados
-                    cursorFloat(brewSpargingTempOffset, 10, 1);
+                    cursorFloat(brewSpargingTempOffset, brewSpargingTempOffset, 10, 1);
                     _blink = true;
                     // configura los valores
                     Menu::configure_brewSpargingTempOffset();
@@ -1472,7 +1532,7 @@ void Menu::configure_brewMashTempOffset()
     stepSetFloat(brewMashTempOffset, 0.5, _temp, 10, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
-    cursorFloat(*_temp, 10, 1);
+    cursorFloat(*_temp, *_temp, 10, 1);
     delay(500);
 
     while(true)
@@ -1497,7 +1557,7 @@ void Menu::configure_brewMashInTempOffset()
     stepSetFloat(brewMashInTempOffset, 0.5, _temp, 10, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
-    cursorFloat(*_temp, 10, 1);
+    cursorFloat(*_temp, *_temp, 10, 1);
     delay(500);
 
     while(true)
@@ -1522,7 +1582,7 @@ void Menu::configure_brewSpargingTempOffset()
     stepSetFloat(brewSpargingTempOffset, 0.5, _temp, 10, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
-    cursorFloat(*_temp, 10, 1);
+    cursorFloat(*_temp, *_temp, 10, 1);
     delay(500);
 
     while(true)
@@ -1562,6 +1622,7 @@ void Menu::showMenu()
         {
             //DEBUG_PRINT(freeMemory());
             //DEBUG_PRINT(F("Entrando a modo monitor"));
+            lcd.clear();
 
             uint8_t totalDevices = sensorsBus.getDeviceCount();
 
@@ -1701,11 +1762,8 @@ void Menu::_showConfirm(String msg)
     lcd.setCursor(0, 0);
     lcd.print(msg);
     lcd.setCursor(0, 1);
-    lcd.write(arrowLeft);
-    lcd.setCursor(15, 1);
-    lcd.write(arrowRight);
-    lcd.setCursor(1, 1);
-    lcd.print(F("PARAR   SEGUIR"));
+    lcd.print(F("STOP        OK  "));
+    Menu::statusHotPump();
 }
 
 void Menu::_showStatus(String msg)
@@ -1714,9 +1772,7 @@ void Menu::_showStatus(String msg)
     lcd.setCursor(0, 0);
     lcd.print(msg);
     lcd.setCursor(0, 1);
-    lcd.write(arrowLeft);
-    lcd.print(F("     PARAR    "));
-    lcd.write(arrowRight);
+    lcd.print(F("STOP        OK  "));
 }
 
 void Menu::startBrew()
@@ -1754,9 +1810,13 @@ void Menu::startBrew()
 
     // STOP ALL!
     Menu::stopHotElement(_rele_r1_pwm_pin);
+    #if SINGLE_R_PWN == false
     Menu::stopHotElement(_rele_r2_pwm_pin);
+    #endif
     Menu::stopPump(_rele_pump_a_pwm_pin);
+    #if SINGLE_PUMP_PWN == false
     Menu::stopPump(_rele_pump_b_pwm_pin);
+    #endif
 }
 
 bool Menu::prepareWater()
@@ -1776,14 +1836,15 @@ bool Menu::prepareWater()
             delay(500); // espera para evitar propagar el trigger
             float temp = brewMashStep0Temp + brewMashTempOffset;
             bool _ckT;
-            Menu::_showStatus(F("Agua a    ___._C"));
+            Menu::_showStatus(F("Agua a  ___._C"));
             while(!buttons.isBack())
             {
                 _ckT = Menu::checkTemp(addrSensorHlt, temp, _currentTemp, brewRecirculationCont, _rele_r1_pwm_pin, _rele_pump_a_pwm_pin);
                 delay(500); // espera para evitar propagar el trigger
                 if(!_ckT)
                 {
-                    Menu::cursorFloat(currentTemp, 10, 0);
+                    Menu::cursorFloat(temp, currentTemp, 8, 0);
+                    Menu::statusHotPump();
                 } 
                 else 
                 {
@@ -1887,7 +1948,7 @@ bool Menu::mashIn()
                             else
                             {
                                 Menu::_showStatus(F("Mashing 1 ___._C"));
-                                Menu::cursorFloat(currentTemp, 10, 0);
+                                Menu::cursorFloat(brewMashStep0Temp, currentTemp, 10, 0);
                             }
                         }
                         break;
