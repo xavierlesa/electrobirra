@@ -430,14 +430,14 @@ void Menu::loadData()
     addrSensorHlt[6] = 0x00;
     addrSensorHlt[7] = 0x26;
 
-    //addrSensorMt[0] = 0x28;
-    //addrSensorMt[1] = 0xFF;
-    //addrSensorMt[2] = 0xBA;
-    //addrSensorMt[3] = 0x51;
-    //addrSensorMt[4] = 0x4B;
-    //addrSensorMt[5] = 0x04;
-    //addrSensorMt[6] = 0x00;
-    //addrSensorMt[7] = 0x26;
+    addrSensorMt[0] = 0x28;
+    addrSensorMt[1] = 0xFF;
+    addrSensorMt[2] = 0xBA;
+    addrSensorMt[3] = 0x51;
+    addrSensorMt[4] = 0x4B;
+    addrSensorMt[5] = 0x04;
+    addrSensorMt[6] = 0x00;
+    addrSensorMt[7] = 0x26;
 
     EEPROM_readAnything(ADDR_BREW_MASH_STEP0_TEMP, brewMashStep0Temp);
     EEPROM_readAnything(ADDR_BREW_MASH_STEP1_TEMP, brewMashStep1Temp);
@@ -777,24 +777,17 @@ void Menu::brewMash(uint8_t pointer)
             lcd.setCursor(0, 1);
             lcd.print(F("___._C / ___ min"));
             
-            //DEBUG_PRINT(F("EEPROM_writeAnything brewMashStep"));
-
-            //DEBUG_PRINT(freeMemory());
             switch(pointer)
             {
                 case 1:
                     // muestra los valores prefijatos/seteados
-                    //DEBUG_PRINT(F("brewMashStep0Temp config. temp actual: "));
-                    //DEBUG_PRINT(brewMashStep0Temp);
-                    //DEBUG_PRINT(F("C / time: "));
-                    //DEBUG_PRINT(brewMashStep0Time);
-                    //DEBUG_PRINT(F("sale de: cursorFloat(brewMashStep0Temp, 0, 1)"));
 
                     cursorFloat(brewMashStep0Temp, brewMashStep0Temp, 0, 1);
                     _blink = true;
                     cursorInt(brewMashStep0Time, 9, 1);
                     // configura los valores
-                    Menu::configure_brewMashStep0();
+                    Menu::configure_brewMashSteps(brewMashStep0Temp, brewMashStep0Time, 
+                            ADDR_BREW_MASH_STEP0_TEMP, ADDR_BREW_MASH_STEP0_TIME);
                     Menu::_showBrewMash(pointer);
                     break;
 
@@ -804,7 +797,8 @@ void Menu::brewMash(uint8_t pointer)
                     _blink = true;
                     cursorInt(brewMashStep1Time, 9, 1);
                     // configura los valores
-                    Menu::configure_brewMashStep1();
+                    Menu::configure_brewMashSteps(brewMashStep1Temp, brewMashStep1Time, 
+                            ADDR_BREW_MASH_STEP1_TEMP, ADDR_BREW_MASH_STEP1_TIME);
                     Menu::_showBrewMash(pointer);
                     break;
 
@@ -814,7 +808,8 @@ void Menu::brewMash(uint8_t pointer)
                     _blink = true;
                     cursorInt(brewMashStep2Time, 9, 1);
                     // configura los valores
-                    Menu::configure_brewMashStep2();
+                    Menu::configure_brewMashSteps(brewMashStep2Temp, brewMashStep2Time, 
+                            ADDR_BREW_MASH_STEP2_TEMP, ADDR_BREW_MASH_STEP2_TIME);
                     Menu::_showBrewMash(pointer);
                     break;
 
@@ -824,7 +819,8 @@ void Menu::brewMash(uint8_t pointer)
                     _blink = true;
                     cursorInt(brewMashStep3Time, 9, 1);
                     // configura los valores
-                    Menu::configure_brewMashStep3();
+                    Menu::configure_brewMashSteps(brewMashStep3Temp, brewMashStep3Time, 
+                            ADDR_BREW_MASH_STEP3_TEMP, ADDR_BREW_MASH_STEP3_TIME);
                     Menu::_showBrewMash(pointer);
                     break;
 
@@ -834,7 +830,8 @@ void Menu::brewMash(uint8_t pointer)
                     _blink = true;
                     cursorInt(brewMashStep4Time, 9, 1);
                     // configura los valores
-                    Menu::configure_brewMashStep4();
+                    Menu::configure_brewMashSteps(brewMashStep4Temp, brewMashStep4Time, 
+                            ADDR_BREW_MASH_STEP4_TEMP, ADDR_BREW_MASH_STEP4_TIME);
                     // ultimo item muestra el menu con modo up
                     Menu::_showBrewMash(pointer, false);
                     break;
@@ -843,49 +840,17 @@ void Menu::brewMash(uint8_t pointer)
     }
 }
 
-void Menu::configure_brewMashStep0()
+void Menu::configure_brewMashSteps(float &stepTemp, uint8_t &stepTime, int addrStepTemp, int addrStepTime)
 {
+    /*
+     * Esta funcion toma el Time y Temp de un Step y lo setea en memoria segun
+     * su addrTime y addrTemp
+     *
+     *
+     */
     float __temp = 0.0;
     float *_temp = &__temp;
-    stepSetFloat(brewMashStep0Temp, 0.5, _temp, 0, 1);
-    // muestra el valor por si queda en _blink false
-    _blink = true;
-    cursorFloat(*_temp, *_temp, 0, 1);
-    //DEBUG_PRINT(F("Setting save stepSetFloat: "));
-    //DEBUG_PRINT(*_temp);
-    delay(500);
-
-    uint8_t __time = 0;
-    uint8_t *_time = &__time;
-    stepSetInt(brewMashStep0Time, 5, _time, 9, 1);
-    //DEBUG_PRINT(F("Setting save stepSetInt: "));
-    //DEBUG_PRINT(*_time);
-    delay(500);
-
-    // guardar?
-    while(true)
-    {
-        Menu::_showSave();
-        if(buttons.isEnter())
-        {
-            // Guarda los datos
-            EEPROM_writeAnything(ADDR_BREW_MASH_STEP0_TEMP, *_temp);
-            EEPROM_writeAnything(ADDR_BREW_MASH_STEP0_TIME, *_time);
-            // reload
-            EEPROM_readAnything(ADDR_BREW_MASH_STEP0_TEMP, brewMashStep0Temp);
-            EEPROM_readAnything(ADDR_BREW_MASH_STEP0_TIME, brewMashStep0Time);
-            Menu::_showSaved();
-            break;
-        }
-        if(buttons.isBack()) break;
-    }
-}
-
-void Menu::configure_brewMashStep1()
-{
-    float __temp = 0.0;
-    float *_temp = &__temp;
-    stepSetFloat(brewMashStep1Temp, 0.5, _temp, 0, 1);
+    stepSetFloat(stepTemp, 0.5, _temp, 0, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
     cursorFloat(*_temp, *_temp, 0, 1);
@@ -893,7 +858,7 @@ void Menu::configure_brewMashStep1()
 
     uint8_t __time = 0;
     uint8_t *_time = &__time;
-    stepSetInt(brewMashStep1Time, 5, _time, 9, 1);
+    stepSetInt(stepTime, 5, _time, 9, 1);
     delay(500);
 
     while(true)
@@ -901,107 +866,11 @@ void Menu::configure_brewMashStep1()
         Menu::_showSave();
         if(buttons.isEnter())
         {
-            EEPROM_writeAnything(ADDR_BREW_MASH_STEP1_TEMP, *_temp);
-            EEPROM_writeAnything(ADDR_BREW_MASH_STEP1_TIME, *_time);
+            EEPROM_writeAnything(addrStepTemp, *_temp);
+            EEPROM_writeAnything(addrStepTime, *_time);
             // reload
-            EEPROM_readAnything(ADDR_BREW_MASH_STEP1_TEMP, brewMashStep1Temp);
-            EEPROM_readAnything(ADDR_BREW_MASH_STEP1_TIME, brewMashStep1Time);
-            Menu::_showSaved();
-            break;
-        }
-        if(buttons.isBack()) break;
-    }
-}
-
-void Menu::configure_brewMashStep2()
-{
-    float __temp = 0.0;
-    float *_temp = &__temp;
-    stepSetFloat(brewMashStep2Temp, 0.5, _temp, 0, 1);
-    // muestra el valor por si queda en _blink false
-    _blink = true;
-    cursorFloat(*_temp, *_temp, 0, 1);
-    delay(500);
-
-    uint8_t __time = 0;
-    uint8_t *_time = &__time;
-    stepSetInt(brewMashStep2Time, 5, _time, 9, 1);
-    delay(500);
-
-    while(true)
-    {
-        Menu::_showSave();
-        if(buttons.isEnter())
-        {
-            EEPROM_writeAnything(ADDR_BREW_MASH_STEP2_TEMP, *_temp);
-            EEPROM_writeAnything(ADDR_BREW_MASH_STEP2_TIME, *_time);
-            // reload
-            EEPROM_readAnything(ADDR_BREW_MASH_STEP2_TEMP, brewMashStep2Temp);
-            EEPROM_readAnything(ADDR_BREW_MASH_STEP2_TIME, brewMashStep2Time);
-            Menu::_showSaved();
-            break;
-        }
-        if(buttons.isBack()) break;
-    }
-}
-
-void Menu::configure_brewMashStep3()
-{
-    float __temp = 0.0;
-    float *_temp = &__temp;
-    stepSetFloat(brewMashStep3Temp, 0.5, _temp, 0, 1);
-    // muestra el valor por si queda en _blink false
-    _blink = true;
-    cursorFloat(*_temp, *_temp, 0, 1);
-    delay(500);
-
-    uint8_t __time = 0;
-    uint8_t *_time = &__time;
-    stepSetInt(brewMashStep3Time, 5, _time, 9, 1);
-    delay(500);
-
-    while(true)
-    {
-        Menu::_showSave();
-        if(buttons.isEnter())
-        {
-            EEPROM_writeAnything(ADDR_BREW_MASH_STEP3_TEMP, *_temp);
-            EEPROM_writeAnything(ADDR_BREW_MASH_STEP3_TIME, *_time);
-            // reload
-            EEPROM_readAnything(ADDR_BREW_MASH_STEP3_TEMP, brewMashStep3Temp);
-            EEPROM_readAnything(ADDR_BREW_MASH_STEP3_TIME, brewMashStep3Time);
-            Menu::_showSaved();
-            break;
-        }
-        if(buttons.isBack()) break;
-    }
-}
-
-void Menu::configure_brewMashStep4()
-{
-    float __temp = 0.0;
-    float *_temp = &__temp;
-    stepSetFloat(brewMashStep4Temp, 0.5, _temp, 0, 1);
-    // muestra el valor por si queda en _blink false
-    _blink = true;
-    cursorFloat(*_temp, *_temp, 0, 1);
-    delay(500);
-
-    uint8_t __time = 0;
-    uint8_t *_time = &__time;
-    stepSetInt(brewMashStep4Time, 5, _time, 9, 1);
-    delay(500);
-
-    while(true)
-    {
-        Menu::_showSave();
-        if(buttons.isEnter())
-        {
-            EEPROM_writeAnything(ADDR_BREW_MASH_STEP4_TEMP, *_temp);
-            EEPROM_writeAnything(ADDR_BREW_MASH_STEP4_TIME, *_time);
-            // reload
-            EEPROM_readAnything(ADDR_BREW_MASH_STEP4_TEMP, brewMashStep4Temp);
-            EEPROM_readAnything(ADDR_BREW_MASH_STEP4_TIME, brewMashStep4Time);
+            EEPROM_readAnything(addrStepTemp, stepTemp);
+            EEPROM_readAnything(addrStepTime, stepTime);
             Menu::_showSaved();
             break;
         }
@@ -1620,17 +1489,9 @@ void Menu::showMenu()
         // MANUAL/MONITOR
         if(Menu::buttons.isEnter() && Menu::pointer_cursor == MENU_MANUAL)
         {
-            //DEBUG_PRINT(freeMemory());
-            //DEBUG_PRINT(F("Entrando a modo monitor"));
             lcd.clear();
 
             uint8_t totalDevices = sensorsBus.getDeviceCount();
-
-            //DEBUG_PRINT(F("Busca los sensores (DS18*) conectados y devuelve las direcciones + indice"));
-            //DEBUG_PRINT(F("Buscando dispositivos..."));
-            //DEBUG_PRINT(F("Se encontraron "));
-            //DEBUG_PRINT(totalDevices);
-            //DEBUG_PRINT(F(" dispositivos."));
 
             float hlt = 0.0;
             float mt = 0.0;
@@ -1654,17 +1515,12 @@ void Menu::showMenu()
                 Menu::monitor(hlt, mt, fc, Menu::manual(_rele_r1_pwm_pin, _rele_pump_a_pwm_pin));
             }
 
-            //free(htl);
-            //free(mt);
-            //free(fc);
             Menu::home();
         }
 
         // BREW
         if(Menu::buttons.isEnter() && Menu::pointer_cursor == MENU_BREW)
         {
-            //DEBUG_PRINT(freeMemory());
-            //DEBUG_PRINT(F("Entrando a modo brew"));
             Menu::brewMenu();
             Menu::home();
         }
@@ -1772,7 +1628,7 @@ void Menu::_showStatus(String msg)
     lcd.setCursor(0, 0);
     lcd.print(msg);
     lcd.setCursor(0, 1);
-    lcd.print(F("STOP        OK  "));
+    lcd.print(F("STOP            "));
 }
 
 void Menu::startBrew()
@@ -1803,7 +1659,9 @@ void Menu::startBrew()
             // inicio de macerado
             if(Menu::mashIn())
             {
-            
+                //if(Menu::recirculation())
+                //{
+                //}
             }
         }
     }
@@ -1837,23 +1695,7 @@ bool Menu::prepareWater()
             float temp = brewMashStep0Temp + brewMashTempOffset;
             bool _ckT;
             Menu::_showStatus(F("Agua a  ___._C"));
-            while(!buttons.isBack())
-            {
-                _ckT = Menu::checkTemp(addrSensorHlt, temp, _currentTemp, brewRecirculationCont, _rele_r1_pwm_pin, _rele_pump_a_pwm_pin);
-                delay(500); // espera para evitar propagar el trigger
-                if(!_ckT)
-                {
-                    Menu::cursorFloat(temp, currentTemp, 8, 0);
-                    Menu::statusHotPump();
-                } 
-                else 
-                {
-                    Menu::stopHotElement(_rele_r1_pwm_pin);
-                    Menu::stopPump(_rele_pump_a_pwm_pin);
-                    status = true; // se termino el proceso de forma correcta
-                    break; // termina el calentamiento
-                }
-            }
+            Menu::_processMashStep(temp, 1);
             break; // termina el proceso del agua
         }
         if(buttons.isBack()) break; // termina el proceso del agua
@@ -1865,11 +1707,11 @@ bool Menu::prepareWater()
 bool Menu::loadMash()
 {
     /*
-     * Procesos para cargar el macerador y comentar el macerado
+     * Procesos para cargar el macerador y comenzar el macerado
      */
 
     bool status = false;
-    Menu::_showConfirm(F("Cargar MACERADOR"));
+    Menu::_showConfirm(F("Cargar MACERAD  "));
     while(!buttons.isBack())
     {
         if(buttons.isEnter())
@@ -1878,9 +1720,10 @@ bool Menu::loadMash()
             delay(500); // espera para evitar propagar el trigger
             Menu::purgePump(_rele_pump_a_pwm_pin);
             Menu::startPump(_rele_pump_a_pwm_pin);
+            Menu::_showConfirm(F("MACERADOR ok?"));
             while(!buttons.isBack())
             {
-                Menu::_showStatus(F("MACERADOR listo?"));
+                Menu::statusHotPump();
                 if(buttons.isEnter())
                 {
                     Menu::stopPump(_rele_pump_a_pwm_pin);
@@ -1894,64 +1737,102 @@ bool Menu::loadMash()
     }
 
     // si continua, pregunta por la precarga de agua para el lavado
-    if(status)
-    {
-        _SPARGING_WATER_IN_PROGRESS = false;
-        Menu::_showConfirm(F("Preparar LAVADO?"));
-        while(!buttons.isBack())
-        {
-            if(buttons.isEnter())
-            {
-                _SPARGING_WATER_IN_PROGRESS = true;
-                Menu::startHotElement(_rele_r1_pwm_pin);
-                Menu::_showConfirm(F("   CALENTANDO   "));
-                delay(2000);
-                break;
-            } 
-        }
-    }
+// ESTO LO VOY A DEJAR PARA OTRA VERSION, PORQUE IMPLICA CAMBIO DEL EQUIPO
+//    if(status)
+//    {
+//        _SPARGING_WATER_IN_PROGRESS = false;
+//        Menu::_showConfirm(F("Preparar LAVADO?"));
+//        while(!buttons.isBack())
+//        {
+//            if(buttons.isEnter())
+//            {
+//                _SPARGING_WATER_IN_PROGRESS = true;
+//                Menu::startHotElement(_rele_r1_pwm_pin);
+//                Menu::_showConfirm(F("   CALENTANDO   "));
+//                delay(2000);
+//                break;
+//            } 
+//        }
+//    }
 
     return status;
 }
 
-bool Menu::mashIn()
+void Menu::_processMashStep(float stepTemp, uint8_t stepTime)
 {
-
     bool _ckT;
-    bool status = false;
-    uint8_t _currentMashStep = 0;
-    unsigned long _currentTime;
+    unsigned long _currentTime = millis();
     float currentTemp = 0.0;
     float *_currentTemp = &currentTemp;
-    Menu::_showConfirm(F("Cargar GRANOS"));
+    lcd.setCursor(8, 1); lcd.print(F("___._C"));
+    while(stepTime > ((millis() - _currentTime)/1000/60))
+    {
+        _ckT = Menu::checkTemp(addrSensorHlt, stepTemp, _currentTemp, brewRecirculationCont, _rele_r1_pwm_pin, _rele_pump_a_pwm_pin);
+        delay(500); // espera para evitar propagar el trigger
+        if(!_ckT) 
+        {
+            // agrega un 1/2 minuto
+            _currentTime += 500;
+        } 
+        else
+        {
+            Menu::stopHotElement(_rele_r1_pwm_pin);
+            Menu::stopPump(_rele_pump_a_pwm_pin);
+        }
+
+        lcd.setCursor(8, 0); lcd.print( ((millis() - _currentTime)/1000)/60 );
+        Menu::cursorFloat(stepTemp, currentTemp, 8, 1);
+        Menu::statusHotPump();
+    }
+}
+
+bool Menu::mashIn()
+{
+    bool status = false;
+    uint8_t _currentMashStep = 0;
+    Menu::_showConfirm(F("Comenzar MASH?"));
     delay(500); // espera para evitar propagar el trigger
     while(!buttons.isBack())
     {
         if(buttons.isEnter())
         {
-            Menu::_showStatus(F("Mash en progreso"));
+            Menu::_showStatus(F("Mash en prog."));
+            Menu::statusHotPump();
 
             while(_currentMashStep < MAX_BREW_MASH_ITEMS - 1)
             {
                 switch(_currentMashStep)
                 {
                     case 0:
-                        _currentTime = millis();
-                        while(brewMashStep0Time > (millis() - _currentTime)/1000)
-                        {
-                            _ckT = Menu::checkTemp(addrSensorMt, brewMashStep0Temp, _currentTemp, brewRecirculationCont, _rele_r1_pwm_pin, _rele_pump_a_pwm_pin);
-                            delay(500); // espera para evitar propagar el trigger
-                            if(!_ckT) 
-                            {
-                                _currentTime += 500;
-                            } 
-                            else
-                            {
-                                Menu::_showStatus(F("Mashing 1 ___._C"));
-                                Menu::cursorFloat(brewMashStep0Temp, currentTemp, 10, 0);
-                            }
-                        }
+                        Menu::_showStatus(F("MASH 1     min  "));
+                        Menu::_processMashStep(brewMashStep0Temp, brewMashStep0Time);
+                        status = true;
                         break;
+
+                    case 1:
+                        Menu::_showStatus(F("MASH 2     min  "));
+                        Menu::_processMashStep(brewMashStep1Temp, brewMashStep1Time);
+                        status = true;
+                        break;
+
+                    case 2:
+                        Menu::_showStatus(F("MASH 3     min  "));
+                        Menu::_processMashStep(brewMashStep2Temp, brewMashStep2Time);
+                        status = true;
+                        break;
+
+                    case 3:
+                        Menu::_showStatus(F("MASH 4     min  "));
+                        Menu::_processMashStep(brewMashStep3Temp, brewMashStep3Time);
+                        status = true;
+                        break;
+
+                    case 4:
+                        Menu::_showStatus(F("MASH 5     min  "));
+                        Menu::_processMashStep(brewMashStep4Temp, brewMashStep4Time);
+                        status = true;
+                        break;
+                    
                 }
 
                 _currentMashStep++;
@@ -1964,7 +1845,22 @@ bool Menu::mashIn()
 
 bool Menu::recirculation()
 {
-
+    bool status = false;
+    Menu::_showConfirm(F("Comenzar Recirc?"));
+    delay(500); // espera para evitar propagar el trigger
+    while(!buttons.isBack())
+    {
+        if(buttons.isEnter())
+        {
+            Menu::purgePump(_rele_pump_a_pwm_pin);
+            Menu::stopPump(_rele_pump_a_pwm_pin);
+            Menu::_showStatus(F("RECIRCUL    min  "));
+            lcd.setCursor(10, 1); lcd.print(F("___._C"));
+            Menu::_processMashStep(brewMashStep4Temp, brewRecirculationTime);
+        }
+    }
+    
+    return status;
 }
 
 bool Menu::sparging()

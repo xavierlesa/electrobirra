@@ -235,11 +235,8 @@ class Menu
         void brewWhirlpool();
         void brewCooling();
 
-        void configure_brewMashStep0();
-        void configure_brewMashStep1();
-        void configure_brewMashStep2();
-        void configure_brewMashStep3();
-        void configure_brewMashStep4();
+        void configure_brewMashSteps(float &stepTemp, uint8_t &stepTime, 
+                int addrStepTemp, int addrStepTime);
 
         void configure_brewBoilTime();
         void configure_brewBoilHops0();
@@ -264,6 +261,8 @@ class Menu
         void purgePump(uint8_t _pump);
         bool checkTemp(DeviceAddress addrSensor, float _temp, float *_currentTemp, 
                 bool recirculationCont, uint8_t _hotElement, uint8_t _pump);
+
+        void _processMashStep(float stepTemp, uint8_t stepTime);
 
         bool prepareWater();
         bool loadMash();
