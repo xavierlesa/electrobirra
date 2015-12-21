@@ -247,9 +247,7 @@ class Menu
         //void configure_brewBoilHops4();
 
         void brewOptionsOffset();
-        void configure_brewMashTempOffset();
-        void configure_brewMashInTempOffset();
-        void configure_brewSpargingTempOffset();
+        void configure_tempOffset(float &tempOffset, int addrOffset);
 
         void _showConfirm(String msg);
         void _showStatus(String msg);
@@ -262,7 +260,7 @@ class Menu
         bool checkTemp(DeviceAddress addrSensor, float _temp, float *_currentTemp, 
                 bool recirculationCont, uint8_t _hotElement, uint8_t _pump);
 
-        void _processMashStep(float stepTemp, uint8_t stepTime);
+        bool _processMashStep(float stepTemp, uint8_t stepTime, bool forcePump = true);
 
         bool prepareWater();
         bool loadMash();
