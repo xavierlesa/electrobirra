@@ -204,64 +204,68 @@ class Menu
 
         Buttons buttons;
         LiquidCrystal lcd;
-        //int stageSize(int stage, int max_substage_index);
+
+        ///////////////////////////////////////////////////////////////////////////////
+        // MENU HELPERS
+        ///////////////////////////////////////////////////////////////////////////////
         void stageSelector(uint8_t stage, uint8_t subpointer = 1, bool asc = true);
-        void stepSetInt(uint8_t _default, uint8_t _step, uint8_t *buffer, uint8_t cur_x, uint8_t cur_y);
-        void stepSetFloat(float _default, float _step, float *buffer, uint8_t cur_x, uint8_t cur_y);
-        void stepSetBool(bool _default, bool *buffer, uint8_t cur_x, uint8_t cur_y);
-        void cursorFloat(float _o, float _f, uint8_t cur_x, uint8_t cur_y);
-        void cursorInt(uint8_t _i, uint8_t cur_x, uint8_t cur_y);
-        void cursorBool(bool _i, uint8_t cur_x, uint8_t cur_y);
-
-        void _showSave();
-        void _showSaved();
-
         void menuNext();
         void menuPrev();
+        void _showSave();
+        void _showSaved();
+        void cursorFloat(float _o, float _f, uint8_t cur_x, uint8_t cur_y);
+        void stepSetFloat(float _default, float _step, float *buffer, uint8_t cur_x, uint8_t cur_y);
+        void cursorInt(uint8_t _i, uint8_t cur_x, uint8_t cur_y);
+        void stepSetInt(uint8_t _default, uint8_t _step, uint8_t *buffer, uint8_t cur_x, uint8_t cur_y);
+        void cursorBool(bool _i, uint8_t cur_x, uint8_t cur_y);
+        void stepSetBool(bool _default, bool *buffer, uint8_t cur_x, uint8_t cur_y);
+        void setTempTime(float &temp, uint8_t &time, int addrTemp, int addrTime);
+        bool _showConfirm(String msg);
+        void _showStatus(String msg, bool status = false);
 
+        ///////////////////////////////////////////////////////////////////////////////
+        // FUNCTIONS
+        ///////////////////////////////////////////////////////////////////////////////
         void loadData();
-        void showMenu();
-        void home();
-        void monitor(float htl, float mt, float fc, uint8_t _flags);
         void statusHotPump();
-        uint8_t manual(uint8_t upPin, uint8_t downPin); //, uint8_t enterPin, uint8_t backPin);
-        void brewMenu(uint8_t pointer = 0);
-        void _showBrewMenu(uint8_t pointer = 0);
-        void brewMash(uint8_t pointer = 1);
-        void _showBrewMash(uint8_t pointer = 1, bool asc = true);
-        void brewRecirculation();
-        void brewSparging();
-        void brewBoil();
-        void brewWhirlpool();
-        void brewCooling();
-
-        void configure_brewMashSteps(float &stepTemp, uint8_t &stepTime, 
-                int addrStepTemp, int addrStepTime);
-
-        void configure_brewBoilTime();
-        void configure_brewBoilHops0();
-        void configure_brewBoilHops1();
-        void configure_brewBoilHops2();
-        void configure_brewBoilHops3();
-        // DESACTIVADO POR SOBREDIMENSION DEL ARRAY
-        //void configure_brewBoilHops4();
-
-        void brewOptionsOffset();
-        void configure_tempOffset(float &tempOffset, int addrOffset);
-
-        void _showConfirm(String msg);
-        void _showStatus(String msg);
-        void startBrew();
         void startPump(uint8_t _pump);
         void stopPump(uint8_t _pump);
         void startHotElement(uint8_t _he);
         void stopHotElement(uint8_t _he);
         void purgePump(uint8_t _pump);
+
+        // ver de cambiar a PID
         bool checkTemp(DeviceAddress addrSensor, float _temp, float *_currentTemp, 
                 bool recirculationCont, uint8_t _hotElement, uint8_t _pump);
 
+        ///////////////////////////////////////////////////////////////////////////////
+        // OPTIONS MENU
+        ///////////////////////////////////////////////////////////////////////////////
+        void home();
+        void showMenu();
+        void brewMenu(uint8_t pointer = 0);
+        void _showBrewMenu(uint8_t pointer = 0);
+        void configureMash(uint8_t pointer = 1);
+        void _showBrewMash(uint8_t pointer = 1, bool asc = true);
+
+        void configureRecirculation();
+        void configureSparging();
+        void configureBoil();
+        void configureWhirlpool();
+        //void configureCooling();
+
+        void configure_brewBoilTimes(uint8_t &boilTime, int addrTime, int step = 1);
+        void configureOffset();
+        void configure_tempOffset(float &tempOffset, int addrOffset);
         bool _processMashStep(float stepTemp, uint8_t stepTime, bool forcePump = true);
 
+        ///////////////////////////////////////////////////////////////////////////////
+        // RUNTIME
+        ///////////////////////////////////////////////////////////////////////////////
+        void monitor(float htl, float mt, float fc, uint8_t _flags);
+        uint8_t manual(uint8_t upPin, uint8_t downPin);
+        void startBrew();
+        void stop();
         bool prepareWater();
         bool loadMash();
         bool mashIn();
