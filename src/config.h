@@ -34,6 +34,29 @@
 //
 // Pines A0 y 4 a 9 reservados
 
+
+//                         13 *---------------------o   I2C (Sensores)
+//                         12 >---------------------o   RELE PID [HT|LT] / RELE PUMP A RELE R1[2]
+//                        ~11 >---------------------o   RELE PID [HT|LT] / RELE PUMP A
+//                        ~10 >-------------+           LCD BACKLIGHT
+//                  A     ~09 >-----------+ |           LCD ENABLE
+//                  R      08 >---------+ | |           LCD RS
+//                  D  U   07 >-------+ | | |           LCD D7
+//                  U  N  ~06 >-----+ | | | |           LCD D6
+//     +-----> A0   I  O  ~05 >---+ | | | | |           LCD D5
+//     |       A1   N      04 >-+ | | | | | |           LCD D4
+//     |       A2   O     ~03 >-|-|-|-|-|-|-|------o    RELE PUMP B
+//     |       A3          02   | | | | | | |
+//     |       A4          01   | | | | | | |
+//     |       A5          00   | | | | | | |
+//     |                        | | | | | | |
+// +---+-------+           +----+-+-+-+-+-+-+------+
+// |     o keys|           |         16X2          |
+// | o o o o r |           |         L C D         |
+// +-----------+           +-----------------------+
+
+
+
 // Menu, LCD setting col/rows
 #define BUTTONS_PIN             A0      // Por defecto usa el ANALOG 0
 
@@ -55,16 +78,16 @@
 // RELES
 // Reles para resistencias x 2
 #define SINGLE_R_PWN            true    // indica si usa dos resistencias individuales o solo una (unica, o en paralelo)
-#define RELE_R1_PWM_PIN         12      // rele para r1
-#define RELE_R2_PWM_PIN         12      // rele para r2, solo es tomado en cuenta si SINGLE_R_PWN es false
+#define RELE_R1_PWM_PIN         11      // rele para r1
+#define RELE_R2_PWM_PIN         3       // rele para r2, solo es tomado en cuenta si SINGLE_R_PWN es false
 
-#define RELE_HT_PWM_PIN         11      // rele para fermentador temp >= H
-#define RELE_LT_PWM_PIN         3       // rele para fermentador temp <= L
+#define RELE_HT_PWM_PIN         12      // rele para fermentador temp >= H
+#define RELE_LT_PWM_PIN         2       // rele para fermentador temp <= L
 
 // Rele para bomba A y B
 #define SINGLE_PUMP_PWN         true    // indica si usa dos bombas individuales (A y B) o solo una (A)
 // Bomba A: recirculado, [trasvase, enfriado]
-#define RELE_PUMP_A_PWM_PIN     11      // A) rele para bomba recirculado, [whirlpool, trasvase y enfriado]
-#define RELE_PUMP_B_PWM_PIN     3       // B) rele para bomba trasvase y enfriado
+#define RELE_PUMP_A_PWM_PIN     12      // A) rele para bomba recirculado, [whirlpool, trasvase y enfriado]
+#define RELE_PUMP_B_PWM_PIN     2       // B) rele para bomba trasvase y enfriado
 
 #define RELE_NA                 true    // el rele es normal abierto = true o normal cerrado = false?

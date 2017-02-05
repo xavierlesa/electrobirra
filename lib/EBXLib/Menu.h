@@ -257,7 +257,7 @@ class Menu
         void configure_brewBoilTimes(uint8_t &boilTime, int addrTime, int step = 1);
         void configureOffset();
         void configure_tempOffset(float &tempOffset, int addrOffset);
-        bool _processMashStep(float stepTemp, uint8_t stepTime, bool forcePump = true);
+        bool _processMashStep(float stepTemp, uint8_t stepTime, bool forcePump = false);
 
         ///////////////////////////////////////////////////////////////////////////////
         // RUNTIME

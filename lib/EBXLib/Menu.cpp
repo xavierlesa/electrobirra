@@ -182,9 +182,9 @@ Menu::Menu(
     //menuItemsBrew[BREW_STAGE_OPTIONS_OFFSET][3] = "Offset Mash-out";
 
     // Variables
-    _HOT_ELEMENTS_STATUS = false;
-    _PUMPS_STATUS = false;
-    _SPARGING_WATER_IN_PROGRESS = false;
+    //_HOT_ELEMENTS_STATUS = false;
+    //_PUMPS_STATUS = false;
+    //_SPARGING_WATER_IN_PROGRESS = false;
     pointer_cursor = 0;
 }
 
@@ -1369,7 +1369,7 @@ bool Menu::_processMashStep(float stepTemp, uint8_t stepTime, bool forcePump)
     lcd.setCursor(8, 1); lcd.print(F("___._C"));
     while(stepTime > ((millis() - _currentTime)/1000/60))
     {
-        _ckT = Menu::checkTemp(addrSensorHlt, stepTemp, _currentTemp, brewRecirculationCont && forcePump, _rele_r1_pwm_pin, _rele_pump_a_pwm_pin);
+        _ckT = Menu::checkTemp(addrSensorHlt, stepTemp, _currentTemp, brewRecirculationCont || forcePump, _rele_r1_pwm_pin, _rele_pump_a_pwm_pin);
         delay(500); // espera para evitar propagar el trigger
         if(buttons.isBack() || buttons.isSelect())
         {
@@ -1653,7 +1653,7 @@ bool Menu::recirculation()
         Menu::purgePump(_rele_pump_a_pwm_pin);
         Menu::stopPump(_rele_pump_a_pwm_pin);
         Menu::_showStatus(F("RECIRC     min  "));
-        status = Menu::_processMashStep(brewMashStep4Temp, brewRecirculationTime);
+        status = Menu::_processMashStep(brewMashStep4Temp, brewRecirculationTime, true);
     }
 
     return status;
@@ -1668,7 +1668,7 @@ bool Menu::sparging()
         Menu::purgePump(_rele_pump_a_pwm_pin);
         Menu::stopPump(_rele_pump_a_pwm_pin);
         Menu::_showStatus(F("LAVADO     min  "));
-        status = Menu::_processMashStep(brewSpargingTemp, brewSpargingTime);
+        status = Menu::_processMashStep(brewSpargingTemp, brewSpargingTime, true);
     }
 
     return status;
@@ -1695,7 +1695,7 @@ bool Menu::boiling()
         status = false;
         delay(500);
         Menu::_showStatus(F("BOILING    min  "));
-        return Menu::_processMashStep(_boilTemp, boilTime, false);
+        return Menu::_processMashStep(_boilTemp, boilTime);
     }
 
     return status;
@@ -1716,27 +1716,27 @@ bool Menu::hops()
         {
             case 0:
                 Menu::_showStatus(F("HOP 1      min  "));
-                status = Menu::_processMashStep(_boilTemp, brewBoilHops0Time, false);
+                status = Menu::_processMashStep(_boilTemp, brewBoilHops0Time);
                 break;
 
             case 1:
                 Menu::_showStatus(F("HOP 2      min  "));
-                status = Menu::_processMashStep(_boilTemp, brewMashStep1Time, false);
+                status = Menu::_processMashStep(_boilTemp, brewMashStep1Time);
                 break;
 
             case 2:
                 Menu::_showStatus(F("HOP 3      min  "));
-                status = Menu::_processMashStep(_boilTemp, brewMashStep2Time, false);
+                status = Menu::_processMashStep(_boilTemp, brewMashStep2Time);
                 break;
 
             case 3:
                 Menu::_showStatus(F("HOP 4      min  "));
-                status = Menu::_processMashStep(_boilTemp, brewMashStep3Time, false);
+                status = Menu::_processMashStep(_boilTemp, brewMashStep3Time);
                 break;
 
             case 4:
                 Menu::_showStatus(F("HOP 5      min  "));
-                status = Menu::_processMashStep(_boilTemp, brewMashStep4Time, false);
+                status = Menu::_processMashStep(_boilTemp, brewMashStep4Time);
                 break;
             
         }
@@ -1757,7 +1757,7 @@ bool Menu::whirlpool()
         delay(500);
         Menu::_showStatus(F("WPOOL      min  "));
         status = Menu::_processMashStep(temp, brewWhirlpoolTime, true) && 
-            Menu::_processMashStep(temp, brewWhirlpoolDelay, false);
+            Menu::_processMashStep(temp, brewWhirlpoolDelay);
     }
 
     return status;
