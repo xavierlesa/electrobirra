@@ -182,7 +182,12 @@ class Menu
         const char* menuItemsBrew[MAX_BREW_STAGE_ITEMS][MAX_BREW_STAGE_ITEMS]; // 6x6 items
         
         Menu(
-                uint8_t BUTTONS_PIN, 
+                uint8_t BUTTON_SELECT_PIN,
+                uint8_t BUTTON_BACK_PIN,
+                uint8_t BUTTON_ENTER_PIN,
+                uint8_t BUTTON_UP_PIN,
+                uint8_t BUTTON_DOWN_PIN,
+                uint8_t BUTTON_DELAY,
                 uint8_t LCD_RS,
                 uint8_t LCD_ENABLE,
                 uint8_t LCD_D4,

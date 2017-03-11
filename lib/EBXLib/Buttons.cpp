@@ -1,55 +1,54 @@
 #include "Arduino.h"
 #include "Buttons.h"
 
-Buttons::Buttons(int pin, const int delay_ms)
+Buttons::Buttons(int pinSelect, int pinBack, int pinEnter, int pinUp, int pinDown, const int delay_ms)
 {
-    pinMode(pin, INPUT);
-    KEYPAD_PIN = pin;
+    pinMode(pinSelect, INPUT_PULLUP);
+    pinMode(pinBack, INPUT_PULLUP);
+    pinMode(pinEnter, INPUT_PULLUP);
+    pinMode(pinUp, INPUT_PULLUP);
+    pinMode(pinDown, INPUT_PULLUP);
+
+    //KEYPAD_PIN = pin;
+    BUTTON_SELECT_PIN = pinSelect;
+    BUTTON_BACK_PIN = pinBack;
+    BUTTON_ENTER_PIN = pinEnter;
+    BUTTON_UP_PIN = pinUp;
+    BUTTON_DOWN_PIN = pinDown;
     DELAY_MS = delay_ms;
 }
 
 int Buttons::getPressedButton()
 {
     int lastPressedBtn;
-    int press_key = analogRead(KEYPAD_PIN);      // read the value from the sensor
-    // my buttons when read are centered at these valies: 0, 144, 329, 504, 741
-    // we add approx 50 to those values and check to see if we are close
-    
-    //Serial.println("pressed key");
-    //Serial.println(press_key);
 
     delay(DELAY_MS);
 
-    if (press_key > NONE_VALUE) 
-    {
-        return BUTTON_NONE; // We make this the 1st option for speed reasons since it will be the most likely result
-    }
-
-    if (press_key < ENTER_VALUE) 
+    if (digitalRead(BUTTON_ENTER_PIN) == LOW)
     {
         lastPressedBtn = BUTTON_ENTER;
         return BUTTON_ENTER; //BUTTON_RIGHT; 
     }
 
-    if (press_key < UP_VALUE) 
+    if (digitalRead(BUTTON_UP_PIN) == LOW) 
     {
         lastPressedBtn = BUTTON_UP;
         return BUTTON_UP;
     }
 
-    if (press_key < DOWN_VALUE) 
+    if (digitalRead(BUTTON_DOWN_PIN) == LOW) 
     {
         lastPressedBtn = BUTTON_DOWN;
         return BUTTON_DOWN;
     }
 
-    if (press_key < BACK_VALUE) 
+    if (digitalRead(BUTTON_BACK_PIN) == LOW) 
     {
         lastPressedBtn = BUTTON_BACK;
         return BUTTON_BACK; //BUTTON_LEFT;
     }
 
-    if (press_key < SELECT_VALUE) 
+    if (digitalRead(BUTTON_SELECT_PIN) == LOW) 
     {
         lastPressedBtn = BUTTON_SELECT;
         return BUTTON_SELECT;

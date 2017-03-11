@@ -14,7 +14,12 @@
 
 // Instance MENU
 Menu::Menu(
-        uint8_t BUTTONS_PIN, 
+        uint8_t BUTTON_SELECT_PIN,
+        uint8_t BUTTON_BACK_PIN,
+        uint8_t BUTTON_ENTER_PIN,
+        uint8_t BUTTON_UP_PIN,
+        uint8_t BUTTON_DOWN_PIN,
+        uint8_t BUTTON_DELAY,
         uint8_t LCD_RS,
         uint8_t LCD_ENABLE,
         uint8_t LCD_D4,
@@ -33,7 +38,7 @@ Menu::Menu(
         uint8_t RELE_PUMP_B_PWM_PIN,
         bool RELE_NA
         ): 
-    buttons(BUTTONS_PIN, 50),
+    buttons(BUTTON_SELECT_PIN, BUTTON_BACK_PIN, BUTTON_ENTER_PIN, BUTTON_UP_PIN, BUTTON_DOWN_PIN, BUTTON_DELAY),
     lcd(LCD_RS, LCD_ENABLE, LCD_D4, LCD_D5, LCD_D6, LCD_D7),
     oneWire(SENSOR_ONEWIRE_PIN),
     sensorsBus(&oneWire)

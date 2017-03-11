@@ -1,61 +1,61 @@
-/*
- * ElectroBirra v 0.2
- * 
- * Proyecto con base arduino para hacer y controlar el proceso de la birra y el 
- * fermentador.
- *
- * autor: Xavier Lesa <xavierlesa@gmail.com>
- * git: http://github.com/ninjaotoko/electrobirra/
- *
- *
- *
- * Menu:
- *
- * 1- Monitor (muestra la temperatua actual)
- * 2- Cocción (rutina para una cocción)
- * 3- Fermentador (rutina para el control del fermentador)
- * 4- Configuracion (setea los valores generales del equipo, como sensores y pines)
- *
- *
- * Manual/Monitor
- * --------------
- *
- *  Temperatura del Sensor
- *  (select para menú principal)
- *  (up para calentar de forma manual)
- *  (down para prender la bomba)
- *
- *
- * Cocción
- * -------
- *
- *  1- Macerado
- *  1.1- Temperatura del macerado
- *  1.2- Escalones del macerado
- *
- *  2- Recirculado
- *  2.1- Recirculado continuo (durante todo el macerado)
- *  2.2- Tiempo de recirculado
- *
- *  3- Lavado
- *  3.1- Temperatura del lavado
- *  3.2- Tiempo de lavado
- *
- *  4- Hervor
- *  4.1- Tiempo de hervor
- *  4.2- Adesión de lupulo[s]
- *  4.3- Escalones de adesión
- *
- *  5- Whirlpool
- *  5.1- Tiempo de whirpool
- *
- *  6- Enfirado
- *  6.1- Traspaso al fermentador
- *
- *  7- Fin
- *
- *
- */
+////////////////////////////////////////////////////////////////////////////////
+//
+// ElectroBirra v 0.2
+// 
+// Proyecto con base arduino para hacer y controlar el proceso de la birra y el 
+// fermentador.
+//
+// autor: Xavier Lesa <xavierlesa@gmail.com>
+// git: http://github.com/ninjaotoko/electrobirra/
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//
+// Menu:
+//
+// 1- Monitor (muestra la temperatua actual)
+// 2- Cocción (rutina para una cocción)
+// 3- Fermentador (rutina para el control del fermentador)
+// 4- Configuracion (setea los valores generales del equipo, como sensores y pines)
+//
+//
+// Manual/Monitor
+// --------------
+//
+//  Temperatura del Sensor
+//  (select para menú principal)
+//  (up para calentar de forma manual)
+//  (down para prender la bomba)
+//
+//
+// Cocción
+// -------
+//
+//  1- Macerado
+//  1.1- Temperatura del macerado
+//  1.2- Escalones del macerado
+//
+//  2- Recirculado
+//  2.1- Recirculado continuo (durante todo el macerado)
+//  2.2- Tiempo de recirculado
+//
+//  3- Lavado
+//  3.1- Temperatura del lavado
+//  3.2- Tiempo de lavado
+//
+//  4- Hervor
+//  4.1- Tiempo de hervor
+//  4.2- Adesión de lupulo[s]
+//  4.3- Escalones de adesión
+//
+//  5- Whirlpool
+//  5.1- Tiempo de whirpool
+//
+//  6- Enfirado
+//  6.1- Traspaso al fermentador
+//
+//  7- Fin
+////////////////////////////////////////////////////////////////////////////////
 
 #include <LiquidCrystal.h>
 #include <OneWire.h>
@@ -65,7 +65,12 @@
 #include "config.h"
 
 Menu menu(
-        BUTTONS_PIN, 
+        BUTTON_SELECT_PIN,
+        BUTTON_BACK_PIN,
+        BUTTON_ENTER_PIN,
+        BUTTON_UP_PIN,
+        BUTTON_DOWN_PIN,
+        BUTTON_DELAY,
         LCD_RS, 
         LCD_ENABLE, 
         LCD_D4, 

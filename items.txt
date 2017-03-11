@@ -1,0 +1,17 @@
+ITEM                            UNIDADES
+----------------------------------------
+MOC 3041                        3
+BTA16-600                       3
+NIPLE TO220                     3
+MICA TO220                      3
+DISIPADOR U TO220               3
+CONECTOR MACHO MOLEX            3
+CONECTOR HEMBRA MOLEX           3
+FUSIBLE 20Ax250V                3
+PORTA FUSIBLE CLIP 6x32 (par)   3
+RESISTENCIAS 470                10
+RESISTENCIAS 1k                 10
+RESISTENCIAS 100 5W             3
+CAPACITOR 100mf x 300V	        10
+BUZZER 4-7V                     1
+PULSADOR MIGNON N/A 7mm Negro   5

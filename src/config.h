@@ -8,12 +8,12 @@
 //
 // ANALOGOS
 //
-// A0:  BUTTONS
-// A1:  NC
-// A2:  NC
-// A3:  NC
-// A4:  NC
-// A5:  NC
+// A0:  BUTTONS (not used)
+// A1:  BUTTONS (Select)
+// A2:  BUTTONS (Back)
+// A3:  BUTTONS (Enter)
+// A4:  BUTTONS (Up)
+// A5:  BUTTONS (Down)
 // 
 // DIGITAL
 // 
@@ -58,7 +58,14 @@
 
 
 // Menu, LCD setting col/rows
-#define BUTTONS_PIN             A0      // Por defecto usa el ANALOG 0
+//#define BUTTONS_PIN             A0      // Por defecto usa el ANALOG 0
+//#define BUTTON_NONE_PIN         A0      // Por defecto usa el ANALOG 0
+#define BUTTON_SELECT_PIN       A1      // Por defecto usa el ANALOG 1
+#define BUTTON_BACK_PIN         A2      // Por defecto usa el ANALOG 2
+#define BUTTON_ENTER_PIN        A3      // Por defecto usa el ANALOG 3
+#define BUTTON_UP_PIN           A4      // Por defecto usa el ANALOG 4
+#define BUTTON_DOWN_PIN         A5      // Por defecto usa el ANALOG 5
+#define BUTTON_DELAY            20      // ms delay
 
 #define LCD_D4                  4
 #define LCD_D5                  5
