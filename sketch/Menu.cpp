@@ -166,7 +166,7 @@ Menu::Menu(
     menuItems[MENU_MANUAL] = "Manual/Monitor";
     menuItems[MENU_BREW] = "Coccion";
     //menuItems[MENU_FERMENTATION] = "Fermentador";
-    //menuItems[MENU_CONFIGURATION] = "Configuracion";
+    menuItems[MENU_CONFIGURATION] = "Configuracion";
     menuItems[MENU_START] = "Comenzar !!!";
 
     menuItemsBrew[BREW_STAGE_MASH][SUBSTAGE_INDEX] = "Macerado";
@@ -198,9 +198,18 @@ Menu::Menu(
     menuItemsBrew[BREW_STAGE_OPTIONS_OFFSET][3] = "Offset Lavado";
     //menuItemsBrew[BREW_STAGE_OPTIONS_OFFSET][3] = "Offset Mash-out";
 
+    //menuItemsConfig[SUBSTAGE_INDEX] = "Configuracion";
+    menuItemsConfig[SUBSTAGE_INDEX] = "Configurar Kp";
+    menuItemsConfig[1] = "Configurar Ki";
+    menuItemsConfig[2] = "Configurar Kd";
+    menuItemsConfig[3] = "Configurar Wz";
+    menuItemsConfig[4] = "Autotune";
+
     // Setup PID
     // setpoint to 0 for start
     pid_setpoint = 0;
+    //pid_w_size = 5000;
+    //pid_auto = true;
 
     pid_w_starttime = millis();
     //tell the PID to range between 0 and the full window size
@@ -292,7 +301,62 @@ void Menu::_showSaved()
     delay(1000);
 }
 
-void Menu::cursorFloat(float _o, float _f, uint8_t cur_x, uint8_t cur_y)
+void Menu::cursorFloat(float _o, float _f, uint8_t cur_x, uint8_t cur_y, uint8_t _d)
+{
+    /*
+     * Muestra la temperatura objetivo y la temperatura actual
+     * en la posiciones x, y
+     */
+
+    char _buffer[6];
+    if(_blink)
+    {
+        dtostrf(_f, 3, _d, _buffer);
+        lcd.setCursor(cur_x, cur_y);
+        if(_f < 10)
+        { 
+            lcd.setCursor(cur_x, cur_y);
+            lcd.print(F("__")); 
+            lcd.print(_buffer);
+        }
+        if(_f >= 10 && _f < 100)
+        {
+            lcd.setCursor(cur_x, cur_y);
+            lcd.print(F("_"));
+            lcd.print(_buffer);
+        }
+        if(_f >= 100)
+        {
+            lcd.setCursor(cur_x, cur_y);
+            lcd.print(_buffer);
+        }
+    }
+    else 
+    {
+        dtostrf(_o, 3, _d, _buffer);
+        lcd.setCursor(cur_x, cur_y);
+        if(_o < 10)
+        { 
+            lcd.setCursor(cur_x, cur_y);
+            lcd.print(F("__")); 
+            lcd.print(_buffer);
+        }
+        if(_o >= 10 && _o < 100)
+        {
+            lcd.setCursor(cur_x, cur_y);
+            lcd.print(F("_"));
+            lcd.print(_buffer);
+        }
+        if(_o >= 100)
+        {
+            lcd.setCursor(cur_x, cur_y);
+            lcd.print(_buffer);
+        }
+    }
+    _blink = !_blink;
+}
+
+void Menu::cursorDouble(double _o, double _f, uint8_t cur_x, uint8_t cur_y)
 {
     /*
      * Muestra la temperatura objetivo y la temperatura actual
@@ -359,7 +423,7 @@ void Menu::stepSetFloat(float _default, float _step, float *buffer, uint8_t cur_
     {
         if(buttons.isUp()) _default += _step;
         if(buttons.isDown() && _default >= _step) _default -= _step;
-        Menu::cursorFloat(_default, _default, cur_x, cur_y);
+        Menu::cursorFloat(_default, _default, cur_x, cur_y, 2);
     }
 
     *buffer = _default;
@@ -600,6 +664,19 @@ void Menu::loadData()
     EEPROM_readAnything(ADDR_BREW_MASHIN_TEMP_OFFSET, brewMashInTempOffset);
     EEPROM_readAnything(ADDR_BREW_SPARGING_TEMP_OFFSET, brewSpargingTempOffset);
 
+    // PID config
+    EEPROM_readAnything(ADDR_PID_KP, pid_kp);
+    EEPROM_readAnything(ADDR_PID_KI, pid_ki);
+    EEPROM_readAnything(ADDR_PID_KD, pid_kd);
+    EEPROM_readAnything(ADDR_PID_W_SIZE, pid_w_size);
+    EEPROM_readAnything(ADDR_PID_AUTO, pid_auto);
+
+    if(isnan(pid_kp)) pid_kp = 4.0;
+    if(isnan(pid_ki)) pid_ki = 0.2;
+    if(isnan(pid_kd)) pid_kd = 0.1;
+    if(isnan(pid_w_size)) pid_w_size = 1500;
+    if(isnan(pid_auto)) pid_auto = true;
+
     if(isnan(brewMashStep0Temp) || isinf(brewMashStep0Temp)) brewMashStep0Temp = 66.5;
     if(isnan(brewMashStep1Temp)) brewMashStep1Temp = 66.5;
     if(isnan(brewMashStep2Temp)) brewMashStep2Temp = 66.5;
@@ -786,12 +863,14 @@ void Menu::showMenu()
 //            //Menu::fermentator();
 //        }
 //
-//        // CONFIGURATION
-//        if(Menu::buttons.isRight() && Menu::pointer_cursor == MENU_CONFIGURATION)
-//        {
-//            DEBUG_PRINT(freeMemory());
-//            DEBUG_PRINT(F("Entrando a modo configuracion"));
-//        }
+        // CONFIGURATION
+        if(Menu::buttons.isRight() && Menu::pointer_cursor == MENU_CONFIGURATION)
+        {
+            DEBUG_PRINT(freeMemory());
+            DEBUG_PRINT(F("Entrando a modo configuracion"));
+            Menu::configure();
+            Menu::home();
+        }
 
         // COMENZAR !!!
         if(Menu::buttons.isRight() && Menu::pointer_cursor == MENU_START)
@@ -1369,11 +1448,11 @@ void Menu::configureOffset()
     }
 }
 
-void Menu::configure_tempOffset(float &tempOffset, int addrOffset)
+void Menu::configure_tempOffset(float &tempOffset, int addrOffset, float step)
 {
     float __temp = 0.0;
     float *_temp = &__temp;
-    stepSetFloat(tempOffset, 0.5, _temp, 10, 1);
+    stepSetFloat(tempOffset, step, _temp, 10, 1);
     // muestra el valor por si queda en _blink false
     _blink = true;
     cursorFloat(*_temp, *_temp, 10, 1);
@@ -1394,6 +1473,117 @@ void Menu::configure_tempOffset(float &tempOffset, int addrOffset)
     }
 }
 
+void Menu::_showConfigureMenu(uint8_t pointer)
+{
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.write(cursorDot);
+    lcd.print(menuItemsConfig[pointer]);
+    lcd.setCursor(0, 1);
+    lcd.print(menuItemsConfig[pointer+1]); 
+
+    // espera para evitar triggear
+    delay(150);
+
+    // serial monitor
+    //DEBUG_PRINT(freeMemory());
+}
+
+void Menu::configure(uint8_t pointer)
+{
+    /*
+     * Configura los K de PID y demas.
+     * 
+     */
+
+    Menu::_showConfigureMenu(pointer);
+
+    float _k;
+
+    while(!buttons.isLeft()/*!buttons.isSelect()*/)
+    {
+        if(buttons.isUp() && pointer > 0)
+        {
+            pointer--;
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.write(cursorDot);
+            lcd.print(menuItemsConfig[pointer]);
+            lcd.setCursor(0, 1);
+            lcd.print(menuItemsConfig[pointer+1]);
+        }
+
+        if(buttons.isDown() && pointer < MAX_CONFIG_STAGE - 1)
+        {
+            pointer++;
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print(menuItemsConfig[pointer-1]);
+            lcd.setCursor(0, 1);
+            lcd.write(cursorDot);
+            lcd.print(menuItemsConfig[pointer]);
+        }
+
+        if(buttons.isRight()) // 
+        {
+            //DEBUG_PRINT(F("Entrando a modo configaracion"));
+            
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print(menuItemsConfig[pointer]);
+            lcd.setCursor(0, 1);
+            lcd.print(F("                "));
+
+            DEBUG_PRINT(pointer);
+            switch(pointer)
+            {
+
+                case 0:
+                    // muestra los valores prefijatos/seteados
+                    _k = (float)(pid_kp);
+
+                    DEBUG_PRINT(_k);
+                    
+                    cursorFloat(_k, _k, 10, 1, 2);
+                    _blink = true;
+                    // configura los valores
+                    Menu::configure_tempOffset(_k, ADDR_PID_KP, 0.05);
+                    pid_kp = (double)(_k);
+                    Menu::configure(pointer);
+                    break;
+
+                case 1:
+                    // muestra los valores prefijatos/seteados
+                    _k = (float)(pid_ki);
+                    
+                    DEBUG_PRINT(_k);
+
+                    cursorFloat(_k, _k, 10, 1, 2);
+                    _blink = true;
+                    // configura los valores
+                    Menu::configure_tempOffset(_k, ADDR_PID_KI, 0.05);
+                    pid_ki = (double)(_k);
+                    Menu::configure(pointer);
+                    break;
+
+                case 2:
+                    // muestra los valores prefijatos/seteados
+                    _k = (float)(pid_kd);
+
+                    DEBUG_PRINT(_k);
+
+                    cursorFloat(_k, _k, 10, 1, 2);
+                    _blink = true;
+                    // configura los valores
+                    Menu::configure_tempOffset(_k, ADDR_PID_KD, 0.05);
+                    pid_kd = (double)(_k);
+                    Menu::configure(pointer);
+                    break;
+
+            }
+        }
+    }
+}
 
 #if SENSORS_BY_ADDRESS == true
 bool Menu::checkTemp(DeviceAddress addrSensor, float _temp, float *buffer, 
@@ -1449,17 +1639,23 @@ bool Menu::checkTemp(uint8_t addrSensor, float _temp, float *buffer,
         // PID
         pid_in = temp;
 
+        if(pid_auto) {
+            double gap = abs(pid_setpoint-pid_in); //distance away from setpoint
+            if (gap < 10)
+            {  //we're close to setpoint, use conservative tuning parameters
+                tempPID.SetTunings(1, 0.05, 0.25);
+            }
+            else
+            {
+                //we're far from setpoint, use aggressive tuning parameters
+                tempPID.SetTunings(4, 0.2, 1);
+            }
+        }
+        else {
+            //ultra agressive!
+            tempPID.SetTunings(2, 5, 1);
+        }
 
-        double gap = abs(pid_setpoint-pid_in); //distance away from setpoint
-        if (gap < 10)
-        {  //we're close to setpoint, use conservative tuning parameters
-            tempPID.SetTunings(1, 0.05, 0.25);
-        }
-        else
-        {
-            //we're far from setpoint, use aggressive tuning parameters
-            tempPID.SetTunings(4, 0.2, 1);
-        }
 
         tempPID.Compute();
         now = millis();

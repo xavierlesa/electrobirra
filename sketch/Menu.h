@@ -25,9 +25,9 @@
 #define MENU_MANUAL                 0
 #define MENU_BREW                   1
 //#define MENU_FERMENTATION           2
-//#define MENU_CONFIGURATION          3
-#define MENU_START                  2
-#define MAX_MENU_ITEMS              3 //5 // define cuantos elementos tiene el menu
+#define MENU_CONFIGURATION          2 // 3 si esta activo Fermentation
+#define MENU_START                  3 // 2 si es solo manual y brew
+#define MAX_MENU_ITEMS              4 // 3 si es solo manual y brew //5 // define cuantos elementos tiene el menu
 
 // Brew
 #define BREW_STAGE_MASH             0
@@ -36,6 +36,9 @@
 #define BREW_STAGE_BOIL             3
 #define BREW_STAGE_WHIRLPOOL        4
 #define BREW_STAGE_OPTIONS_OFFSET   5
+
+// Configuracion
+#define MAX_CONFIG_STAGE            5
 
 #define MAX_BREW_STAGE_ITEMS        6 // define cuantos elementos tiene el stage
 #define MAX_BREW_MASH_ITEMS         6 // define cuantos elementos tiene el substage
@@ -91,8 +94,16 @@
 #define ADDR_BREW_MASH_TEMP_OFFSET          0x5D // Offset para corregir la perdida de temperatura al momento de macerar +5º
 #define ADDR_BREW_MASHIN_TEMP_OFFSET        0x63 // Offset para corregir la perdida de temperatura al momento de macerar +5º
 #define ADDR_BREW_SPARGING_TEMP_OFFSET      0x69 // Offset para corregir la perdida de temperatura al momento de lavar +1º
-// 0x6F
 
+// PID Config
+// 0x6F
+#define ADDR_PID_KP                         0x6F // PID Kp
+#define ADDR_PID_KI                         0x75 // PID Ki
+#define ADDR_PID_KD                         0x7B // PID Kd
+#define ADDR_PID_W_SIZE                     0x81 // PID window size
+#define ADDR_PID_AUTO                       0x83 // Auto tunning
+
+// 0x84
 
 class Menu
 {
@@ -132,17 +143,19 @@ class Menu
         
         // PID settings
         //Define Variables we'll be connecting to
-        double pid_setpoint; //
-        double pid_in;
-        double pid_out;
-        //double pid_kp;
-        //double pid_ki;
-        //double pid_kd;
+
+        double pid_kp;
+        double pid_ki;
+        double pid_kd;
+        int pid_w_size; // = 5000;
+        bool pid_auto;
 
         //Specify the links and initial tuning parameters
         PID tempPID; //(&pid_in, &pid_out, &pid_setpoint, pid_kp, pid_ki, pid_kd, DIRECT);
 
-        int pid_w_size; // = 5000;
+        double pid_setpoint; //
+        double pid_in;
+        double pid_out;
         unsigned long pid_w_starttime;
 
     public:
@@ -204,6 +217,7 @@ class Menu
 
         const char* menuItems[MAX_MENU_ITEMS];    // 5x1 items
         const char* menuItemsBrew[MAX_BREW_STAGE_ITEMS][MAX_BREW_STAGE_ITEMS]; // 6x6 items
+        const char* menuItemsConfig[MAX_CONFIG_STAGE];
         
         Menu(
                 uint8_t BUTTONS_PIN,
@@ -242,7 +256,8 @@ class Menu
         void menuPrev();
         void _showSave();
         void _showSaved();
-        void cursorFloat(float _o, float _f, uint8_t cur_x, uint8_t cur_y);
+        void cursorFloat(float _o, float _f, uint8_t cur_x, uint8_t cur_y, uint8_t _d = 1);
+        void cursorDouble(double _o, double _f, uint8_t cur_x, uint8_t cur_y);
         void stepSetFloat(float _default, float _step, float *buffer, uint8_t cur_x, uint8_t cur_y);
         void cursorInt(uint8_t _i, uint8_t cur_x, uint8_t cur_y);
         void stepSetInt(uint8_t _default, uint8_t _step, uint8_t *buffer, uint8_t cur_x, uint8_t cur_y);
@@ -282,6 +297,9 @@ class Menu
         void configureMash(uint8_t pointer = 1);
         void _showBrewMash(uint8_t pointer = 1, bool asc = true);
 
+        void configure(uint8_t pointer = 0);
+        void _showConfigureMenu(uint8_t pointer = 0);
+
         void configureRecirculation();
         void configureSparging();
         void configureBoil();
@@ -290,7 +308,10 @@ class Menu
 
         void configure_brewBoilTimes(uint8_t &boilTime, int addrTime, int step = 1);
         void configureOffset();
-        void configure_tempOffset(float &tempOffset, int addrOffset);
+        void configure_tempOffset(float &tempOffset, int addrOffset, float step = 0.5);
+        // for double
+        void configure_tempOffset(double &tempOffset, int addrOffset, double step = 0.5);
+
         bool _processMashStep(float stepTemp, uint8_t stepTime, bool forcePump = false);
 
         ///////////////////////////////////////////////////////////////////////////////
